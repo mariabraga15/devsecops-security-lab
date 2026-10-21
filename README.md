@@ -37,9 +37,8 @@ scan on Mondays at 06:23 UTC.
 | --- | --- | --- | --- |
 | Gitleaks | Staged file snapshot | Complete Git history | Secrets and the synthetic token |
 | Semgrep | Staged source, local rules | Application source, local rules | XSS, path traversal, open redirect |
-| Trivy | — | Filesystem and Docker image | Dependencies, configuration, and OS packages |
+| Trivy | — | Filesystem | npm dependencies and configuration |
 | CodeQL | — | JavaScript, security-extended | Semantic analysis; alerts in Security |
-| OWASP Dependency-Check | — | Installed npm dependencies and lockfile | SCA, HTML and JSON reports |
 
 Install the hook once per clone, with Docker running:
 
@@ -55,8 +54,8 @@ cloning and can be bypassed locally, so CI scanning remains necessary.
 ## Reading the results
 
 The initial state is expected to produce findings. Gitleaks, Semgrep, and Trivy
-return a failure status when they find issues; Dependency-Check uses a CVSS
-threshold of 7. Jobs run independently, so one failure does not prevent the other
+return a failure status when they find issues. Trivy filters for HIGH and CRITICAL
+findings. Jobs run independently, so one failure does not prevent the other
 scans. Reports are retained as Actions artifacts for 14 days, including when
 scanners report vulnerabilities. Investigate missing reports and download
 failures as infrastructure errors rather than vulnerability findings.
@@ -67,13 +66,12 @@ configured. These require separate rules under Settings → Rules → Rulesets a
 if desired, a code scanning threshold. Keep an exercise branch and submit fixes
 through pull requests.
 
-Dependency-Check downloads the NVD database. The first run can take a long time
-and encounter rate limits. Recommended: request a key from
-[NVD](https://nvd.nist.gov/developers/request-an-api-key), then add it under
-Settings → Secrets and variables → Actions as `NVD_API_KEY`.
-The key is optional; updates are slower without it. Pull requests from forks do
-not receive this secret and use unauthenticated NVD access. Keep the key out of
-source code.
+The default pipeline runs application tests, Gitleaks, Semgrep, Trivy filesystem,
+and CodeQL. It does not run OWASP Dependency-Check or build and scan a Docker
+image. No NVD API key or NVD database initialization is required. Gitleaks,
+Semgrep, Trivy, and tests have five-minute job limits; CodeQL has ten minutes.
+These are maximum durations, not guaranteed completion times. Runner queues and
+scanner database downloads can still add time.
 
 ## Exercises
 
@@ -113,4 +111,3 @@ is a manual exercise.
 - [Semgrep CLI](https://docs.semgrep.dev/cli-reference)
 - [Trivy](https://github.com/aquasecurity/trivy)
 - [CodeQL Action](https://github.com/github/codeql-action)
-- [OWASP Dependency-Check](https://github.com/dependency-check/DependencyCheck)
