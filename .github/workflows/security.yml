@@ -82,6 +82,8 @@ jobs:
 
   trivy:
     name: Trivy filesystem
+    # Dependency/configuration checks belong to PR review and the main baseline.
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -106,6 +108,8 @@ jobs:
 
   codeql:
     name: CodeQL JavaScript
+    # Keep feature-branch pushes light; analyze PR merge refs and main instead.
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
