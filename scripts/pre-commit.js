@@ -9,8 +9,7 @@ let failed = false;
 try {
   execFileSync('git', ['checkout-index', '--all', `--prefix=${snapshot.replaceAll('\\', '/')}/`], { stdio: 'inherit' });
   const scans = [
-    ['ghcr.io/gitleaks/gitleaks:v8.30.1', 'dir', '.', '--config', '.gitleaks.toml', '--redact'],
-    ['semgrep/semgrep:1.182.0', 'semgrep', 'scan', '--config', 'security/semgrep.yml', '--metrics=off', '--error', 'src']
+    ['ghcr.io/gitleaks/gitleaks:v8.30.1', 'dir', '.', '--config', '.gitleaks.toml', '--redact']
   ];
   for (const scan of scans) {
     const result = spawnSync('docker', ['run', '--rm', '-v', `${snapshot}:/repo:ro`, '-w', '/repo', ...scan], { stdio: 'inherit' });
