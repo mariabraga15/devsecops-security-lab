@@ -12,7 +12,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', mode: 'vulnerable-lab'
 // CWE-79: user input is rendered as HTML without escaping.
 app.get('/search', (req, res) => {
   const query = req.query.q || '';
-  res.send('<h1>Rezultate</h1><p>Ai căutat: ' + query + '</p><a href="/">Înapoi</a>');
+  res.send('<h1>Results</h1><p>You searched for: ' + query + '</p><a href="/">Back</a>');
 });
 
 // CWE-22: user input can escape the intended documents directory.
@@ -20,7 +20,7 @@ app.get('/download', (req, res) => {
   const filename = req.query.file || 'welcome.txt';
   const documentPath = path.join(__dirname, 'documents', filename);
   fs.readFile(documentPath, 'utf8', (error, content) => {
-    if (error) return res.status(404).send('Document inexistent');
+    if (error) return res.status(404).send('Document not found');
     res.type('text/plain').send(content);
   });
 });
