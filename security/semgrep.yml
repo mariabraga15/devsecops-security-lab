@@ -1,0 +1,30 @@
+rules:
+  - id: lab-reflected-xss
+    languages: [javascript]
+    severity: ERROR
+    message: Untrusted query data reaches an HTML response. Escape output or render an autoescaped template.
+    mode: taint
+    pattern-sources:
+      - pattern: $REQ.query.$PARAM
+    pattern-sinks:
+      - pattern: $RES.send(...)
+  - id: lab-path-traversal
+    languages: [javascript]
+    severity: ERROR
+    message: Untrusted query data reaches a filesystem read. Resolve and enforce a fixed document root.
+    mode: taint
+    pattern-sources:
+      - pattern: $REQ.query.$PARAM
+    pattern-sinks:
+      - patterns:
+          - pattern: fs.readFile($PATH, ...)
+          - focus-metavariable: $PATH
+  - id: lab-open-redirect
+    languages: [javascript]
+    severity: ERROR
+    message: Untrusted redirect destination. Allow only known local destinations.
+    mode: taint
+    pattern-sources:
+      - pattern: $REQ.query.$PARAM
+    pattern-sinks:
+      - pattern: $RES.redirect(...)
