@@ -29,43 +29,56 @@ synthetic data. The Docker image runs as a non-root user and has a health check.
 
 ## Development and security flow
 
-Work on a separate branch and move each change through this sequence:
+Use a feature branch so that a pull request reviews the change before it reaches
+`main`. Each stage adds checks appropriate to that stage:
 
 ```text
-Create a branch and edit the code
+Create a feature branch and edit the code
     -> git add <files>
-       Stage the changes; no scan runs at this step.
+       Stage changes. No scan runs yet.
     -> git commit -m "Describe the change"
-       LOCAL pre-commit scans: Gitleaks + Semgrep on the staged snapshot.
+       LOCAL: Gitleaks scans the staged snapshot for secrets.
        Findings or scanner errors block the commit.
     -> git push -u origin <branch>
-       GITHUB ACTIONS (push): application tests + Gitleaks + Semgrep
-       + Trivy filesystem + CodeQL.
+       FAST CI: application tests + Gitleaks + Semgrep.
     -> Open a pull request targeting main
-       GITHUB ACTIONS (pull_request): the same tests and four scanners run again.
-    -> Review Files changed, Checks, reports, and code scanning alerts
-    -> Fix any issues, then git add -> git commit -> git push again
-       Each push updates the PR and triggers fresh push/PR checks.
+       FULL CI: application tests + Gitleaks + Semgrep + Trivy + CodeQL.
+    -> Review the diff, Checks, reports, and CodeQL alerts
+    -> Fix issues, then git add -> git commit -> git push
+       The push reruns fast CI and updates the PR, which reruns full CI.
     -> Merge the reviewed pull request into main
-       GITHUB ACTIONS (push to main): the same checks run on the merged code.
+       FULL CI runs again on the resulting push to main.
 ```
 
 **Before your first commit:** start Docker Desktop and run `npm run hooks:install`
 once in each clone. Without that installation, `git commit` does not run the
 local security hook. A commit stays on your computer until you push it.
 
-| Stage / trigger | What runs | Where to inspect results |
+| Stage / trigger | Checks that run | Purpose |
 | --- | --- | --- |
-| `git add` | Nothing; only stages changes | `git status` and `git diff --cached` |
-| `git commit` with the hook installed | Gitleaks and Semgrep, staged files only | Local terminal |
-| `git push` to any branch | Tests, Gitleaks history scan, Semgrep, Trivy filesystem, CodeQL | Actions → Security Lab → job logs and artifacts |
-| Open, reopen, or update a PR | The same CI checks | Pull request → Checks; CodeQL alerts in Security → Code scanning |
-| Merge into `main` | The same CI checks, triggered by the resulting push | Actions → Security Lab, branch `main` |
-| Run workflow / weekly schedule | The same CI checks | Actions → Security Lab |
+| `git add` | None | Select the changes for the next commit |
+| `git commit` with the hook installed | Gitleaks on the staged snapshot | Catch secrets before they enter a commit |
+| `push` to a feature branch (any branch except `main`) | Application tests, Gitleaks history scan, Semgrep | Give early feedback without running every scanner on every push |
+| PR opened, reopened, or updated with new commits | Application tests, Gitleaks, Semgrep, Trivy filesystem, CodeQL | Review the proposed integration with the target branch |
+| `push` to `main`, including a merged PR | All five CI jobs | Verify the merged code and update the default-branch security baseline |
+| Manual **Run workflow** | All five CI jobs on the selected branch | Rerun a full assessment when needed |
+| Monday at 06:23 UTC | All five CI jobs on the default branch | Detect new dependency advisories even when code has not changed |
 
-A branch push associated with an open PR can produce two runs: one for `push`
-and one for `pull_request`. A successful CodeQL job means the analysis ran;
-also inspect its alerts. Merge blocking requires separate repository rules.
+**Why this split?** Local commits get a focused secret check. Semgrep and tests
+run after push where their tools and environment are consistent. Trivy and
+CodeQL join at PR review to provide dependency/configuration analysis and deeper
+code analysis before merge. You can also run `npm test` locally at any time.
+The first Docker image download can still make a local hook slower.
+
+In a feature-branch push run, **Trivy filesystem** and **CodeQL JavaScript** are
+intentionally **skipped**. They must run in the PR run. A push to a branch with
+an open PR creates both a fast `push` run and a full `pull_request` run. The fast
+checks repeat in the PR run to validate GitHub's proposed merge result, rather
+than relying only on the branch result. Jobs within each run are independent.
+
+CI repeats Gitleaks because local hooks can be missing or bypassed. A successful
+CodeQL job means the analysis ran; also inspect its alerts. Merge blocking
+requires separate repository rules.
 
 For a hands-on review, follow the [verification checklist](docs/verification-checklist.md).
 
@@ -90,18 +103,15 @@ and the preserved local bootstrap commit. This is a documented training-fixture
 exception, not a repair of a leaked credential. Other secrets and new token
 occurrences are still detected. A real leaked secret must be revoked or rotated.
 
-## Scanners and triggers
+## What each scanner checks
 
-GitHub Actions runs on every push, pull request creation/update/reopening,
-manual dispatch, and Mondays at 06:23 UTC. Jobs run independently.
-
-| Tool | Before commit | GitHub Actions | Output |
-| --- | --- | --- | --- |
-| Gitleaks | Staged snapshot | Complete Git history | Redacted SARIF artifact |
-| Semgrep | Staged source | Local taint-analysis rules | SARIF artifact |
-| Trivy | — | Filesystem dependencies and configuration | SARIF artifact |
-| CodeQL | — | JavaScript, security-extended | Code scanning alerts and SARIF artifact |
-| Application tests | Manual `npm test` | Regression suite | Job log |
+| Tool | Scope | Output |
+| --- | --- | --- |
+| Gitleaks | Staged snapshot locally; complete Git history in CI | Local terminal; redacted SARIF artifact in CI |
+| Semgrep | Application source using the repository's taint-analysis rules | SARIF artifact |
+| Trivy | Filesystem dependencies and configuration | SARIF artifact |
+| CodeQL | JavaScript with the security-extended query suite | Code scanning alerts and SARIF artifact |
+| Application tests | Regression suite for remediated behavior | Job log |
 
 Install the local hook once per clone, with Docker Desktop running:
 
@@ -110,12 +120,12 @@ npm run hooks:install
 ```
 
 The hook scans a temporary copy of the Git index, including newly staged files.
-Findings and scanner errors block commits. Hooks are not installed automatically
-when cloning and can be bypassed locally, so CI remains necessary.
+Findings and scanner errors block commits. Semgrep runs in CI after push, rather
+than in the local hook.
 
-The default pipeline does not run Dependency-Check or build/scan a container
-image. It requires no NVD API key or NVD database initialization. Tests,
-Gitleaks, Semgrep and Trivy have five-minute job limits; CodeQL has ten minutes.
+The pipeline does not run Dependency-Check or build/scan a container image.
+It requires no NVD API key or NVD database initialization. Tests, Gitleaks,
+Semgrep and Trivy have five-minute job limits; CodeQL has ten minutes.
 These are limits, not guaranteed completion times. Runner queues and scanner
 database downloads can still add time.
 
