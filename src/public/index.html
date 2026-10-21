@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DevSecOps Security Lab</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#101723;color:#edf1f8;font:17px/1.6 system-ui,sans-serif}
+    main{max-width:1040px;margin:60px auto;padding:24px}small{color:#7de3c5;letter-spacing:.12em}
+    h1{font-size:clamp(36px,6vw,64px);line-height:1.08;margin:22px 0}p{color:#b9c5d5}
+    .warning{border-left:4px solid #ffa768;padding:14px 20px;background:#30251f;color:#ffd4b2}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:32px}
+    article{background:#192333;border:1px solid #304057;border-radius:14px;padding:24px}h2{font-size:22px}
+    input,button{font:inherit;border-radius:6px;padding:10px;width:100%;margin-top:10px}
+    input{background:#101723;color:white;border:1px solid #506079}button{border:0;background:#7de3c5;cursor:pointer;color:#10251e}
+    a{color:#7de3c5}footer{margin-top:32px;color:#8c9bb0;font-size:14px}
+  </style>
+</head>
+<body><main>
+  <small>SECURITY ENGINEERING / TRAINING ENVIRONMENT</small>
+  <h1>DevSecOps<br>Security Lab</h1>
+  <p>De la cod vulnerabil la rezultate măsurabile: secrets scanning, SAST, SCA și securitatea containerelor.</p>
+  <div class="warning">Aplicație intenționat vulnerabilă. Rulează exclusiv local, cu date fictive.</div>
+  <div class="grid">
+    <article><h2>01 / Căutare</h2><p>Observă cum sunt afișate datele introduse de utilizator.</p>
+      <form action="/search"><label for="q">Termen de căutare</label><input id="q" name="q" placeholder="DevSecOps"><button>Caută</button></form></article>
+    <article><h2>02 / Documente</h2><p>Analizează validarea căii către documentele locale.</p>
+      <form action="/download"><label for="file">Nume document</label><input id="file" name="file" value="welcome.txt"><button>Deschide documentul</button></form></article>
+    <article><h2>03 / Navigare</h2><p>Verifică dacă destinația redirecționării este de încredere.</p>
+      <form action="/redirect"><label for="next">Destinație</label><input id="next" name="next" value="/"><button>Continuă</button></form></article>
+  </div>
+  <footer>Gitleaks · Semgrep · Trivy · CodeQL · OWASP Dependency-Check<br>Exercițiu: identifică → explică impactul → remediază într-un pull request → rescanează.</footer>
+</main></body></html>
