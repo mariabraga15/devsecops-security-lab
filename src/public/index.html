@@ -16,16 +16,16 @@
   </style>
 </head>
 <body><main>
-  <small>SECURITY ENGINEERING / TRAINING ENVIRONMENT</small>
+  <small>SECURITY ENGINEERING / REMEDIATED TRAINING ENVIRONMENT</small>
   <h1>DevSecOps<br>Security Lab</h1>
-  <p>From vulnerable code to measurable results: secrets scanning, SAST, SCA, and configuration security.</p>
-  <div class="warning">Intentionally vulnerable application. Run locally with synthetic data only.</div>
+  <p>From findings to fixes: verify input handling, dependency updates, and automated security checks.</p>
+  <div class="warning">Remediated training application. Keep running locally with synthetic data only.</div>
   <div class="grid">
-    <article><h2>01 / Search</h2><p>Observe how user input is displayed in the response.</p>
+    <article><h2>01 / Search</h2><p>Search terms are escaped before they are displayed as HTML.</p>
       <form action="/search"><label for="q">Search term</label><input id="q" name="q" placeholder="DevSecOps"><button>Search</button></form></article>
-    <article><h2>02 / Documents</h2><p>Review path validation when accessing local documents.</p>
+    <article><h2>02 / Documents</h2><p>Only the approved welcome document is available.</p>
       <form action="/download"><label for="file">Document name</label><input id="file" name="file" value="welcome.txt"><button>Open document</button></form></article>
-    <article><h2>03 / Navigation</h2><p>Check whether the redirect destination can be trusted.</p>
+    <article><h2>03 / Navigation</h2><p>Approved destinations: / and /api/topics. Other destinations are rejected.</p>
       <form action="/redirect"><label for="next">Destination</label><input id="next" name="next" value="/"><button>Continue</button></form></article>
   </div>
   <footer>Gitleaks · Semgrep · Trivy · CodeQL<br>Exercise: identify → explain the impact → fix in a pull request → rescan.</footer>
