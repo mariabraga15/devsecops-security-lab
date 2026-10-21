@@ -23,5 +23,5 @@ try {
   // snapshot is a freshly-created OS temporary directory owned by this invocation.
   fs.rmSync(snapshot, { recursive: true, force: true });
 }
-if (failed) console.error('Commit blocat: remediază finding-urile sau eroarea de scanare. Vezi README.');
+if (failed) console.error('Commit blocked: fix the findings or scanner error. See README.');
 process.exitCode = failed ? 1 : 0;
