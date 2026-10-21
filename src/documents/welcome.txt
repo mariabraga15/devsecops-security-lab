@@ -1,1 +1,1 @@
-Document demonstrativ. Date fictive, exclusiv pentru laboratorul local.
+Sample document. Synthetic data for the local training lab only.
