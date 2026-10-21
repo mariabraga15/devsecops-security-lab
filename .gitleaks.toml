@@ -1,0 +1,8 @@
+title = "DevSecOps lab: default rules plus a synthetic test token"
+[extend]
+useDefault = true
+[[rules]]
+id = "lab-synthetic-token"
+description = "Synthetic training token; has no access to any service"
+regex = '''LAB_ONLY_[0-9a-f]{32}'''
+keywords = ["LAB_ONLY_"]

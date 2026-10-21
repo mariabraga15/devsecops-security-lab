@@ -1,0 +1,16 @@
+{
+  "name": "devsecops-security-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intentionally vulnerable local application for a DevSecOps training lab",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "hooks:install": "node scripts/install-hooks.js"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "express": "4.17.1",
+    "lodash": "4.17.20"
+  }
+}
