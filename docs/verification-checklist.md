@@ -31,6 +31,16 @@ The automated tests cover additional encoded paths, repeated query parameters,
 script markup and server startup conflicts. Restart a running server after
 changing its source so that manual checks use the current application code.
 
+## Commit and feature-branch push checks
+
+- Install the hook with `npm run hooks:install` and keep Docker Desktop running.
+- On `git commit`, confirm the local Gitleaks scan completes. Semgrep, Trivy,
+  and CodeQL do not run in this hook. Run `npm test` locally when useful.
+- After pushing a feature branch, open its **Security Lab** run in **Actions**.
+  Expect **Application tests**, **Gitleaks secrets**, and **Semgrep SAST** to run.
+- **Trivy filesystem** and **CodeQL JavaScript** should be **skipped** in this
+  feature-branch push run. They run in the full PR assessment below.
+
 ## Pull request checks
 
 - Confirm the pull request targets `main` and contains only the intended changes.
@@ -56,4 +66,5 @@ real leaked credential.
 
 Merge only after reviewing the diff and checks. Repository rules must be configured
 separately if successful checks are to be mandatory. After merging, the `push`
-event on `main` runs the pipeline again against the merged result.
+event on `main` runs all five CI jobs again against the merged result. Manual
+workflow runs and the weekly schedule also run the full suite.
