@@ -6,6 +6,8 @@ rules:
     mode: taint
     pattern-sources:
       - pattern: $REQ.query.$PARAM
+    pattern-sanitizers:
+      - pattern: escapeHtml(...)
     pattern-sinks:
       - pattern: $RES.send(...)
   - id: lab-path-traversal
