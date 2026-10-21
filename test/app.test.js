@@ -1,6 +1,8 @@
 'use strict';
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 const app = require('../src/app');
 let server, base;
 before(async () => {
@@ -93,6 +95,18 @@ test('redirect rejects external, protocol-relative, encoded, script and ambiguou
 test('topics remain sorted after replacing Lodash with native sorting', async () => {
   const response = await fetch(base + '/api/topics');
   assert.deepEqual(await response.json(), ['Containers', 'SAST', 'SCA', 'Secrets']);
+});
+
+test('server reports failure instead of claiming startup when its port is occupied', () => {
+  const child = spawnSync(process.execPath, ['src/server.js'], {
+    cwd: path.resolve(__dirname, '..'),
+    env: { ...process.env, HOST: '127.0.0.1', PORT: String(server.address().port) },
+    encoding: 'utf8',
+    timeout: 10000
+  });
+  assert.equal(child.status, 1);
+  assert.match(child.stderr, /EADDRINUSE/);
+  assert.doesNotMatch(child.stdout, /Security lab: http/);
 });
 
 test('repeated requests are rate limited with a retry interval', async () => {
