@@ -27,6 +27,48 @@ docker compose down
 Compose publishes the port only on `127.0.0.1`. Keep the lab local and use
 synthetic data. The Docker image runs as a non-root user and has a health check.
 
+## Development and security flow
+
+Work on a separate branch and move each change through this sequence:
+
+```text
+Create a branch and edit the code
+    -> git add <files>
+       Stage the changes; no scan runs at this step.
+    -> git commit -m "Describe the change"
+       LOCAL pre-commit scans: Gitleaks + Semgrep on the staged snapshot.
+       Findings or scanner errors block the commit.
+    -> git push -u origin <branch>
+       GITHUB ACTIONS (push): application tests + Gitleaks + Semgrep
+       + Trivy filesystem + CodeQL.
+    -> Open a pull request targeting main
+       GITHUB ACTIONS (pull_request): the same tests and four scanners run again.
+    -> Review Files changed, Checks, reports, and code scanning alerts
+    -> Fix any issues, then git add -> git commit -> git push again
+       Each push updates the PR and triggers fresh push/PR checks.
+    -> Merge the reviewed pull request into main
+       GITHUB ACTIONS (push to main): the same checks run on the merged code.
+```
+
+**Before your first commit:** start Docker Desktop and run `npm run hooks:install`
+once in each clone. Without that installation, `git commit` does not run the
+local security hook. A commit stays on your computer until you push it.
+
+| Stage / trigger | What runs | Where to inspect results |
+| --- | --- | --- |
+| `git add` | Nothing; only stages changes | `git status` and `git diff --cached` |
+| `git commit` with the hook installed | Gitleaks and Semgrep, staged files only | Local terminal |
+| `git push` to any branch | Tests, Gitleaks history scan, Semgrep, Trivy filesystem, CodeQL | Actions → Security Lab → job logs and artifacts |
+| Open, reopen, or update a PR | The same CI checks | Pull request → Checks; CodeQL alerts in Security → Code scanning |
+| Merge into `main` | The same CI checks, triggered by the resulting push | Actions → Security Lab, branch `main` |
+| Run workflow / weekly schedule | The same CI checks | Actions → Security Lab |
+
+A branch push associated with an open PR can produce two runs: one for `push`
+and one for `pull_request`. A successful CodeQL job means the analysis ran;
+also inspect its alerts. Merge blocking requires separate repository rules.
+
+For a hands-on review, follow the [verification checklist](docs/verification-checklist.md).
+
 ## Remediations
 
 | Original issue | Fix | Regression coverage |
