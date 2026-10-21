@@ -1,8 +1,8 @@
-# Laborator intenționat vulnerabil
+# Intentionally vulnerable lab
 
-Aplicația, tokenul sintetic și dependențele vechi sunt exerciții documentate.
-Nu utiliza date reale, secrete reale sau infrastructură de producție.
-Rulează aplicația numai pe localhost; nu o publica prin GitHub Pages, tuneluri sau cloud.
+The application, synthetic token, and outdated dependencies are documented exercises.
+Use synthetic data, nonfunctional tokens, and an isolated training environment.
+Run the application only on localhost; keep it off GitHub Pages, tunnels, and public cloud hosting.
 
-Pentru probleme în workflow-uri sau vulnerabilități neintenționate, folosește
-raportarea privată GitHub dacă este activată; nu include secrete în issue-uri publice.
+For workflow issues or unintended vulnerabilities, use GitHub private reporting
+if enabled. Keep secrets out of public issues.

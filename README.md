@@ -1,12 +1,12 @@
 # DevSecOps Security Lab
 
-Website **intenționat vulnerabil**, pentru învățarea unui pipeline de securitate.
-Rulează numai local, cu date fictive. Repository-ul public găzduiește surse,
-nu o instanță publică a aplicației.
+An **intentionally vulnerable website** for learning how to build a security
+pipeline. Run it locally with synthetic data. This public repository hosts the
+source code, not a public instance of the application.
 
-## Pornire
+## Getting started
 
-Ai nevoie de Node.js 22+ și Git. Din folderul repository-ului:
+You need Node.js 22+ and Git. From the repository directory:
 
 ```sh
 npm ci --ignore-scripts
@@ -14,100 +14,102 @@ npm test
 npm start
 ```
 
-Deschide http://127.0.0.1:3000. Serverul ascultă implicit numai pe localhost.
-Alternativ, cu Docker Desktop pornit:
+Open http://127.0.0.1:3000. By default, the server listens only on localhost.
+Alternatively, with Docker Desktop running:
 
 ```sh
 docker compose up --build
-# Oprire:
+# Stop the lab:
 docker compose down
 ```
 
-Compose publică portul exclusiv pe `127.0.0.1`. Nu modifica această adresă
-pentru a expune laboratorul pe internet. Nu introduce tokenuri sau date reale.
+Compose publishes the port only on `127.0.0.1`. Keep this binding to avoid
+exposing the lab to the internet. Use synthetic data and nonfunctional tokens.
 
-## Scanări și declanșatoare
+## Scanners and triggers
 
-GitHub Actions nu primește un eveniment pentru un commit rămas pe calculator.
-Hook-ul local acoperă etapa înainte de commit; workflow-ul acoperă **fiecare push
-pe orice branch**, crearea/actualizarea unui **pull request**, rularea manuală
-și o scanare săptămânală luni la 06:23 UTC.
+GitHub Actions does not receive an event for a commit that stays on your computer.
+The local hook covers the pre-commit stage. The workflow covers **every push to
+any branch**, **pull request** creation and updates, manual runs, and a weekly
+scan on Mondays at 06:23 UTC.
 
-| Instrument | Înainte de commit | Push / PR | Scop |
+| Tool | Before commit | Push / PR | Purpose |
 | --- | --- | --- | --- |
-| Gitleaks | Snapshot-ul fișierelor staged | Istoricul Git complet | Secrete și tokenul sintetic |
-| Semgrep | Cod staged, reguli locale | Codul aplicației, reguli locale | XSS, path traversal, open redirect |
-| Trivy | — | Filesystem + imagine Docker | Dependențe, configurații și pachete OS |
-| CodeQL | — | JavaScript, security-extended | Analiză semantică; alerte în Security |
-| OWASP Dependency-Check | — | Dependențe npm instalate și lockfile | SCA, rapoarte HTML și JSON |
+| Gitleaks | Staged file snapshot | Complete Git history | Secrets and the synthetic token |
+| Semgrep | Staged source, local rules | Application source, local rules | XSS, path traversal, open redirect |
+| Trivy | — | Filesystem and Docker image | Dependencies, configuration, and OS packages |
+| CodeQL | — | JavaScript, security-extended | Semantic analysis; alerts in Security |
+| OWASP Dependency-Check | — | Installed npm dependencies and lockfile | SCA, HTML and JSON reports |
 
-Instalează hook-ul o singură dată pentru fiecare clonă, după ce ai pornit Docker:
+Install the hook once per clone, with Docker running:
 
 ```sh
 npm run hooks:install
 ```
 
-Hook-ul scanează o copie temporară a **indexului Git**. Fișierele nou adăugate
-cu `git add` sunt incluse; modificările unstaged nu pot ascunde rezultate.
-Rulează ambele scanări și blochează commit-ul la rezultate sau erori.
-Hook-urile nu sunt instalate automat la clonare și pot fi ocolite local;
-scanările CI rămân necesare.
+The hook scans a temporary copy of the **Git index**. Newly staged files are
+included; unstaged changes cannot hide findings. Both scanners run, and findings
+or scanner errors block the commit. Hooks are not installed automatically when
+cloning and can be bypassed locally, so CI scanning remains necessary.
 
-## Cum interpretezi rezultatele
+## Reading the results
 
-Starea inițială trebuie să producă finding-uri. Gitleaks, Semgrep și Trivy
-returnează cod de eșec la finding-uri; Dependency-Check folosește pragul CVSS 7.
-Joburile sunt independente, astfel încât un eșec nu împiedică celelalte scanări.
-Rapoartele sunt păstrate ca Actions artifacts timp de 14 zile, inclusiv când
-scanarea raportează vulnerabilități. Un raport lipsă sau o eroare de download
-trebuie investigată ca eroare de infrastructură, nu ca vulnerabilitate găsită.
+The initial state is expected to produce findings. Gitleaks, Semgrep, and Trivy
+return a failure status when they find issues; Dependency-Check uses a CVSS
+threshold of 7. Jobs run independently, so one failure does not prevent the other
+scans. Reports are retained as Actions artifacts for 14 days, including when
+scanners report vulnerabilities. Investigate missing reports and download
+failures as infrastructure errors rather than vulnerability findings.
 
-CodeQL publică alerte în **Security → Code scanning**; jobul poate fi verde
-chiar când găsește vulnerabilități. Nu este configurată protecția branch-ului
-sau blocarea merge-urilor. Pentru acestea sunt necesare reguli separate în
-Settings → Rules → Rulesets și, dacă dorești, un prag pentru code scanning.
-Păstrează un branch pentru exerciții și trimite remedierile prin PR.
+CodeQL publishes alerts under **Security → Code scanning**. Its job can pass even
+when vulnerabilities are found. Branch protection and merge blocking are not
+configured. These require separate rules under Settings → Rules → Rulesets and,
+if desired, a code scanning threshold. Keep an exercise branch and submit fixes
+through pull requests.
 
-Dependency-Check descarcă baza NVD. Prima rulare poate dura mult și poate
-întâmpina rate limiting. Recomandat: obține o cheie de la
-[NVD](https://nvd.nist.gov/developers/request-an-api-key) și adaug-o în
-Settings → Secrets and variables → Actions sub numele `NVD_API_KEY`.
-Cheia este opțională; fără ea actualizarea va fi mai lentă. PR-urile din fork-uri
-nu primesc acest secret și folosesc accesul NVD fără cheie. Nu adăuga cheia în cod.
+Dependency-Check downloads the NVD database. The first run can take a long time
+and encounter rate limits. Recommended: request a key from
+[NVD](https://nvd.nist.gov/developers/request-an-api-key), then add it under
+Settings → Secrets and variables → Actions as `NVD_API_KEY`.
+The key is optional; updates are slower without it. Pull requests from forks do
+not receive this secret and use unauthenticated NVD access. Keep the key out of
+source code.
 
-## Exerciții
+## Exercises
 
-| Exercițiu | Locație | Remediere propusă |
+| Exercise | Location | Suggested remediation |
 | --- | --- | --- |
-| Reflected XSS (CWE-79) | `GET /search?q=...` | Escapare HTML contextuală sau template cu autoescape |
-| Path traversal (CWE-22) | `GET /download?file=...` | Allowlist de documente și verificarea căii canonice |
-| Open redirect (CWE-601) | `GET /redirect?next=...` | Destinații locale aprobate |
-| Secret detection | `security/fixtures/demo-secret.txt` | Elimină tokenul sintetic și discută istoricul Git |
-| Dependențe vechi | Express 4.17.1, lodash 4.17.20 | Actualizează versiuni și lockfile, apoi rescanează |
+| Reflected XSS (CWE-79) | `GET /search?q=...` | Contextual HTML escaping or an autoescaped template |
+| Path traversal (CWE-22) | `GET /download?file=...` | Document allowlist and canonical path validation |
+| Open redirect (CWE-601) | `GET /redirect?next=...` | Approved local destinations |
+| Secret detection | `security/fixtures/demo-secret.txt` | Remove the synthetic token and discuss Git history |
+| Outdated dependencies | Express 4.17.1, lodash 4.17.20 | Update versions and lockfile, then rescan |
 
-Tokenul `LAB_ONLY_…` nu funcționează la niciun serviciu. Regula Gitleaks locală
-îl detectează intenționat și extinde regulile implicite. Nu este un secret real.
-Eliminarea lui din working tree nu îl elimină din istoricul scanat în CI.
-Într-un exercițiu ulterior poți adăuga o excepție explicită strict pentru fixture-ul
-sintetic, justificată în PR; nu dezactiva regulile implicite sau scanarea istoricului.
-Pentru un secret real, primul pas este revocarea/rotația lui.
+The `LAB_ONLY_…` token does not work with any service. The local Gitleaks rule
+detects it intentionally and extends the default rules. It is not a real secret.
+Removing it from the working tree does not remove it from the history scanned
+in CI. In a later exercise, you can add an explicit exception strictly for the
+synthetic fixture, justified in a PR. Keep the default rules and history scanning
+enabled. For a real secret, revoke or rotate it first.
 
-Testele marcate `baseline` confirmă comportamentul vulnerabil inițial.
-La remediere, înlocuiește așteptările cu teste care cer escapare/respingere;
-altfel testele inițiale vor eșua tocmai pentru că vulnerabilitatea a fost eliminată.
+Tests marked `baseline` characterize the initial vulnerable behavior. When fixing
+an issue, replace these expectations with tests that require escaping or
+rejection. Otherwise, the baseline tests will fail precisely because the
+vulnerability has been removed.
 
-## Securitatea pipeline-ului
+## Pipeline security
 
-Workflow-ul folosește `pull_request`, permisiuni minime și Actions fixate la SHA.
-Nu pornește website-ul în CI, nu publică imagini, nu folosește `pull_request_target`
-și nu include tokenuri reale. Scanerele containerizate sunt fixate la versiuni;
-imaginea de bază Node urmărește linia 22-alpine și se poate modifica în timp.
-Rapoartele Gitleaks sunt redactate. Semgrep folosește reguli locale fără cont sau token.
-Dependabot urmărește Actions; actualizarea dependențelor vulnerabile este un exercițiu manual.
+The workflow uses `pull_request`, minimal permissions, and Actions pinned to
+commit SHAs. It does not start a public website, publish images, use
+`pull_request_target`, or include real tokens. Scanner containers are pinned to
+versions; the Node base image tracks 22-alpine and can change over time.
+Gitleaks reports are redacted. Semgrep uses local rules without an account or
+token. Dependabot tracks Actions; updating vulnerable application dependencies
+is a manual exercise.
 
-## Referințe
+## References
 
-- [Gitleaks CLI și configurare](https://github.com/gitleaks/gitleaks)
+- [Gitleaks CLI and configuration](https://github.com/gitleaks/gitleaks)
 - [Semgrep CLI](https://docs.semgrep.dev/cli-reference)
 - [Trivy](https://github.com/aquasecurity/trivy)
 - [CodeQL Action](https://github.com/github/codeql-action)
