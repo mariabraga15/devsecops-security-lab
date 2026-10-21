@@ -1,12 +1,13 @@
 # DevSecOps Security Lab
 
-An **intentionally vulnerable website** for learning how to build a security
-pipeline. Run it locally with synthetic data. This public repository hosts the
-source code, not a public instance of the application.
+The default branch is the **remediated version** of a local security training
+application. Compare findings and fixes without publishing the application to
+the internet. Earlier commits preserve the intentionally vulnerable exercises;
+the pre-remediation baseline is [ac5c9f4](https://github.com/mariabraga15/devsecops-security-lab/tree/ac5c9f42e672747d094b99d43879722d760f16a2).
 
 ## Getting started
 
-You need Node.js 22+ and Git. From the repository directory:
+Use Node.js 22+ and Git. From the repository directory:
 
 ```sh
 npm ci --ignore-scripts
@@ -14,8 +15,8 @@ npm test
 npm start
 ```
 
-Open http://127.0.0.1:3000. By default, the server listens only on localhost.
-Alternatively, with Docker Desktop running:
+Open http://127.0.0.1:3000. The server listens only on localhost by default.
+With Docker Desktop running, you can instead use:
 
 ```sh
 docker compose up --build
@@ -23,91 +24,86 @@ docker compose up --build
 docker compose down
 ```
 
-Compose publishes the port only on `127.0.0.1`. Keep this binding to avoid
-exposing the lab to the internet. Use synthetic data and nonfunctional tokens.
+Compose publishes the port only on `127.0.0.1`. Keep the lab local and use
+synthetic data. The Docker image runs as a non-root user and has a health check.
+
+## Remediations
+
+| Original issue | Fix | Regression coverage |
+| --- | --- | --- |
+| Reflected XSS in `/search` | Type and length validation, then `escape-html` for HTML text output | Script/image markup and HTML metacharacters are escaped |
+| Path traversal in `/download` | Exact document allowlist with a constant filesystem path | Traversal, absolute paths, double encoding and duplicate parameters are rejected |
+| Open redirect in `/redirect` | Only constant `/` and `/api/topics` destinations | External URLs, protocol-relative URLs, scripts and ambiguous inputs are rejected |
+| Missing rate limiting | `express-rate-limit` middleware: 60 requests per client per minute | Request bursts receive HTTP 429 and a retry interval |
+| Outdated dependency tree | Express updated to a pinned current release; Lodash replaced with native sorting | npm audit, Trivy and API behavior checks |
+| Synthetic token finding | Remove the nonfunctional fixture token from the working tree | Default Gitleaks rules and the training rule remain enabled |
+
+The application also sets a restrictive script policy, prevents MIME sniffing
+and framing, and removes the Express identification header. The custom Semgrep
+XSS rule recognizes the actual `escapeHtml` sanitizer; the rule stays enabled.
+
+The historical token was never a real credential. `.gitleaksignore` contains
+only its two exact commit/path/rule/line fingerprints: the GitHub fixture commit
+and the preserved local bootstrap commit. This is a documented training-fixture
+exception, not a repair of a leaked credential. Other secrets and new token
+occurrences are still detected. A real leaked secret must be revoked or rotated.
 
 ## Scanners and triggers
 
-GitHub Actions does not receive an event for a commit that stays on your computer.
-The local hook covers the pre-commit stage. The workflow covers **every push to
-any branch**, **pull request** creation and updates, manual runs, and a weekly
-scan on Mondays at 06:23 UTC.
+GitHub Actions runs on every push, pull request creation/update/reopening,
+manual dispatch, and Mondays at 06:23 UTC. Jobs run independently.
 
-| Tool | Before commit | Push / PR | Purpose |
+| Tool | Before commit | GitHub Actions | Output |
 | --- | --- | --- | --- |
-| Gitleaks | Staged file snapshot | Complete Git history | Secrets and the synthetic token |
-| Semgrep | Staged source, local rules | Application source, local rules | XSS, path traversal, open redirect |
-| Trivy | — | Filesystem | npm dependencies and configuration |
-| CodeQL | — | JavaScript, security-extended | Semantic analysis; alerts in Security |
+| Gitleaks | Staged snapshot | Complete Git history | Redacted SARIF artifact |
+| Semgrep | Staged source | Local taint-analysis rules | SARIF artifact |
+| Trivy | — | Filesystem dependencies and configuration | SARIF artifact |
+| CodeQL | — | JavaScript, security-extended | Code scanning alerts and SARIF artifact |
+| Application tests | Manual `npm test` | Regression suite | Job log |
 
-Install the hook once per clone, with Docker running:
+Install the local hook once per clone, with Docker Desktop running:
 
 ```sh
 npm run hooks:install
 ```
 
-The hook scans a temporary copy of the **Git index**. Newly staged files are
-included; unstaged changes cannot hide findings. Both scanners run, and findings
-or scanner errors block the commit. Hooks are not installed automatically when
-cloning and can be bypassed locally, so CI scanning remains necessary.
+The hook scans a temporary copy of the Git index, including newly staged files.
+Findings and scanner errors block commits. Hooks are not installed automatically
+when cloning and can be bypassed locally, so CI remains necessary.
+
+The default pipeline does not run Dependency-Check or build/scan a container
+image. It requires no NVD API key or NVD database initialization. Tests,
+Gitleaks, Semgrep and Trivy have five-minute job limits; CodeQL has ten minutes.
+These are limits, not guaranteed completion times. Runner queues and scanner
+database downloads can still add time.
 
 ## Reading the results
 
-The initial state is expected to produce findings. Gitleaks, Semgrep, and Trivy
-return a failure status when they find issues. Trivy filters for HIGH and CRITICAL
-findings. Jobs run independently, so one failure does not prevent the other
-scans. Reports are retained as Actions artifacts for 14 days, including when
-scanners report vulnerabilities. Investigate missing reports and download
-failures as infrastructure errors rather than vulnerability findings.
+Under **Actions → Security Lab**, select a run for the relevant commit. Each job
+contains its log; **Summary → Artifacts** contains the reports, retained for 14
+days. Gitleaks and Semgrep fail on findings. Trivy fails on HIGH/CRITICAL findings.
+CodeQL can finish successfully while reporting alerts under
+**Security → Code scanning**. Missing reports and download failures are scanner
+errors and must not be interpreted as clean scans.
 
-CodeQL publishes alerts under **Security → Code scanning**. Its job can pass even
-when vulnerabilities are found. Branch protection and merge blocking are not
-configured. These require separate rules under Settings → Rules → Rulesets and,
-if desired, a code scanning threshold. Keep an exercise branch and submit fixes
-through pull requests.
+To audit the installed dependency tree locally:
 
-The default pipeline runs application tests, Gitleaks, Semgrep, Trivy filesystem,
-and CodeQL. It does not run OWASP Dependency-Check or build and scan a Docker
-image. No NVD API key or NVD database initialization is required. Gitleaks,
-Semgrep, Trivy, and tests have five-minute job limits; CodeQL has ten minutes.
-These are maximum durations, not guaranteed completion times. Runner queues and
-scanner database downloads can still add time.
+```sh
+npm audit
+```
 
-## Exercises
+The regression suite verifies the remediated behavior. To study the original
+vulnerabilities, inspect the baseline commit in a separate local checkout.
+Do not copy its vulnerable dependencies back into the remediated branch.
 
-| Exercise | Location | Suggested remediation |
-| --- | --- | --- |
-| Reflected XSS (CWE-79) | `GET /search?q=...` | Contextual HTML escaping or an autoescaped template |
-| Path traversal (CWE-22) | `GET /download?file=...` | Document allowlist and canonical path validation |
-| Open redirect (CWE-601) | `GET /redirect?next=...` | Approved local destinations |
-| Secret detection | `security/fixtures/demo-secret.txt` | Remove the synthetic token and discuss Git history |
-| Outdated dependencies | Express 4.17.1, lodash 4.17.20 | Update versions and lockfile, then rescan |
-
-The `LAB_ONLY_…` token does not work with any service. The local Gitleaks rule
-detects it intentionally and extends the default rules. It is not a real secret.
-Removing it from the working tree does not remove it from the history scanned
-in CI. In a later exercise, you can add an explicit exception strictly for the
-synthetic fixture, justified in a PR. Keep the default rules and history scanning
-enabled. For a real secret, revoke or rotate it first.
-
-Tests marked `baseline` characterize the initial vulnerable behavior. When fixing
-an issue, replace these expectations with tests that require escaping or
-rejection. Otherwise, the baseline tests will fail precisely because the
-vulnerability has been removed.
-
-## Pipeline security
-
-The workflow uses `pull_request`, minimal permissions, and Actions pinned to
-commit SHAs. It does not start a public website, publish images, use
-`pull_request_target`, or include real tokens. Scanner containers are pinned to
-versions; the Node base image tracks 22-alpine and can change over time.
-Gitleaks reports are redacted. Semgrep uses local rules without an account or
-token. Dependabot tracks Actions; updating vulnerable application dependencies
-is a manual exercise.
+Scan results describe the analyzed version and the databases available at scan
+time. Passing these checks does not establish that the application is suitable
+for production. Branch protection and required merge checks are separate GitHub
+settings; they are not enabled by this repository's workflow.
 
 ## References
 
-- [Gitleaks CLI and configuration](https://github.com/gitleaks/gitleaks)
+- [Gitleaks](https://github.com/gitleaks/gitleaks)
 - [Semgrep CLI](https://docs.semgrep.dev/cli-reference)
 - [Trivy](https://github.com/aquasecurity/trivy)
 - [CodeQL Action](https://github.com/github/codeql-action)

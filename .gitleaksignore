@@ -1,0 +1,5 @@
+# Exact fingerprints of the nonfunctional training token, not real credentials.
+# GitHub fixture commit:
+d2a2a1be740cbdbf48dbff3a2ce835df652543eb:security/fixtures/demo-secret.txt:lab-synthetic-token:2
+# Preserved local bootstrap commit:
+5df7c49555db761b8c7b992d1c8156d0ff6d78e9:security/fixtures/demo-secret.txt:lab-synthetic-token:2

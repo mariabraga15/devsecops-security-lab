@@ -1,5 +1,6 @@
 node_modules/
 reports/
+/gitleaks-report.json
 .env
 .env.*
 !.env.example
