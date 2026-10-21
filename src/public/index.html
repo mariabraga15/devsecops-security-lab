@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ro">
+<html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>DevSecOps Security Lab</title>
@@ -18,15 +18,15 @@
 <body><main>
   <small>SECURITY ENGINEERING / TRAINING ENVIRONMENT</small>
   <h1>DevSecOps<br>Security Lab</h1>
-  <p>De la cod vulnerabil la rezultate măsurabile: secrets scanning, SAST, SCA și securitatea containerelor.</p>
-  <div class="warning">Aplicație intenționat vulnerabilă. Rulează exclusiv local, cu date fictive.</div>
+  <p>From vulnerable code to measurable results: secrets scanning, SAST, SCA, and container security.</p>
+  <div class="warning">Intentionally vulnerable application. Run locally with synthetic data only.</div>
   <div class="grid">
-    <article><h2>01 / Căutare</h2><p>Observă cum sunt afișate datele introduse de utilizator.</p>
-      <form action="/search"><label for="q">Termen de căutare</label><input id="q" name="q" placeholder="DevSecOps"><button>Caută</button></form></article>
-    <article><h2>02 / Documente</h2><p>Analizează validarea căii către documentele locale.</p>
-      <form action="/download"><label for="file">Nume document</label><input id="file" name="file" value="welcome.txt"><button>Deschide documentul</button></form></article>
-    <article><h2>03 / Navigare</h2><p>Verifică dacă destinația redirecționării este de încredere.</p>
-      <form action="/redirect"><label for="next">Destinație</label><input id="next" name="next" value="/"><button>Continuă</button></form></article>
+    <article><h2>01 / Search</h2><p>Observe how user input is displayed in the response.</p>
+      <form action="/search"><label for="q">Search term</label><input id="q" name="q" placeholder="DevSecOps"><button>Search</button></form></article>
+    <article><h2>02 / Documents</h2><p>Review path validation when accessing local documents.</p>
+      <form action="/download"><label for="file">Document name</label><input id="file" name="file" value="welcome.txt"><button>Open document</button></form></article>
+    <article><h2>03 / Navigation</h2><p>Check whether the redirect destination can be trusted.</p>
+      <form action="/redirect"><label for="next">Destination</label><input id="next" name="next" value="/"><button>Continue</button></form></article>
   </div>
-  <footer>Gitleaks · Semgrep · Trivy · CodeQL · OWASP Dependency-Check<br>Exercițiu: identifică → explică impactul → remediază într-un pull request → rescanează.</footer>
+  <footer>Gitleaks · Semgrep · Trivy · CodeQL · OWASP Dependency-Check<br>Exercise: identify → explain the impact → fix in a pull request → rescan.</footer>
 </main></body></html>
