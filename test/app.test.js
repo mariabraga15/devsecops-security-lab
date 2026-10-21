@@ -13,7 +13,7 @@ after(() => new Promise(resolve => server.close(resolve)));
 test('homepage identifies the vulnerable local lab', async () => {
   const response = await fetch(base);
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /intenționat vulnerabilă/);
+  assert.match(await response.text(), /Intentionally vulnerable application/);
 });
 test('health endpoint responds', async () => {
   assert.equal((await (await fetch(base + '/health')).json()).status, 'ok');
